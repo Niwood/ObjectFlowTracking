@@ -6,6 +6,9 @@ import numpy as np
 def pre_process(vid, img_size):
     ret, frame = vid.read()
 
+    if not ret:
+        return None, None, None, ret, None
+
     # frame = cv2.resize(frame, (720, 480))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 

@@ -18,8 +18,9 @@ def region_of_geofence(obj_list, rog_area):
     y2 = rog_area[1][1]
 
     rog_count = 0
-    for obj in obj_list:
+    for obj in list(obj_list):
         if len(obj_list[obj])>0:
-            if obj_list[obj][0]>x1 and obj_list[obj][0]<x2 and obj_list[obj][1]>y1 and obj_list[obj][1]<y2:
-                rog_count += 1
+            if len(obj_list[obj]['position']) != 0:
+                if obj_list[obj]['position'][-1][0]>x1 and obj_list[obj]['position'][-1][0]<x2 and obj_list[obj]['position'][-1][1]>y1 and obj_list[obj]['position'][-1][1]<y2:
+                    rog_count += 1
     return rog_count

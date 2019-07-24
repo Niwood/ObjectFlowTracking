@@ -23,12 +23,13 @@ from PIL import Image
 '''
 Configuration
 '''
-video_path = 'images/blueangels.jpg' # Set parameter to "cam" for webcam
+video_path = 'images/highway.mp4' # Set parameter to "cam" for webcam
 video_path = 'cam'
 save_record = False
 enable_ROG = False
 manual_ROG_selection = False # Pre defined ROG area in main loop
 enable_otm = True
+print_tracking = False
 
 yolo_model = 'default' # default or tiny
 # img_size = 416
@@ -85,9 +86,10 @@ Video source and motion tracker
 mot_tracker = Sort()
 if video_path=='cam':
     vid = cv2.VideoCapture(0)
+    number_of_frames = 1
 else:
     vid = cv2.VideoCapture(video_path)
-
+    number_of_frames = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
 
 
 '''
@@ -107,7 +109,8 @@ elif not enable_ROG:
 Main loop
 '''
 if save_record:
-    out_video = cv2.VideoWriter('images/output.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, (720, 480))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out_video = cv2.VideoWriter('images/output.mp4',fourcc, 20.0, (int(vid.get(3)),int(vid.get(4))))
 obj_list = {}
 rog_count = 0
 rog_count_tot = 0
@@ -124,8 +127,7 @@ while(True):
         print('End of video.')
         break
 
-
-    ''' Image Detection '''
+    ''' Image Detection, shape: (x1, y1, x2, y2, object_conf, class_score, class_pred) '''
     if enable_otm:
         detections = detect_image(pilimg, img_size, conf_thres, nms_thres, model, Tensor)
     else:
@@ -144,47 +146,61 @@ while(True):
     unpad_w = img_size - pad_x
 
 
-    obj_list = {}
     if detections is not None:
 
         tracked_objects = mot_tracker.update(detections.cpu())
-        for i in [int(i[4]) for i in tracked_objects]:
-            obj_list[i] = []
+        tracked_object_list = [int(i[4]) for i in tracked_objects]
 
-        unique_labels = detections[:, -1].cpu().unique()
-        n_cls_preds = len(unique_labels)
-        for x1, y1, x2, y2, obj_id, cls_pred in tracked_objects:
+        # Remove objects when more than 100 objects
+        if len(obj_list)>100:
+            obj_list.pop(min(obj_list), None)
 
+        # Add newly detected objects
+        for i in tracked_object_list:
+            if i not in obj_list:
+                obj_list[i] = {'class':'','position':[]}
 
-            if True:
-                box_h = int(((y2 - y1) / unpad_h) * img.shape[0])
-                box_w = int(((x2 - x1) / unpad_w) * img.shape[1])
-                y1 = int(((y1 - pad_y // 2) / unpad_h) * img.shape[0])
-                x1 = int(((x1 - pad_x // 2) / unpad_w) * img.shape[1])
-                x_point = int((2*x1+box_w)/2)
-                y_point = int(y1+box_h)
-                obj_list[obj_id] = [x_point ,y_point]
+        # unique_labels = detections[:, -1].cpu().unique()
+        # n_cls_preds = len(unique_labels)
 
-                color = colors[int(obj_id) % len(colors)]
-                # color = (255, 153, 255)
-                cls = classes[int(cls_pred)]
-                cv2.rectangle(frame, (x1, y1), (x1+box_w, y1+box_h), color, 4)
-                # cv2.circle(frame, (x_point,y_point), 10, color, thickness=-1, lineType=8, shift=0)
-                # cv2.putText(frame, cls + "-" + str(int(obj_id)), (x_point, y_point), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        for track_obj, obj_conf in zip(tracked_objects,list(detections[:, 4].numpy())):
 
-                ''' Count objects in ROG '''
-                rog_count = region_of_geofence(obj_list, rog_area)
+            x1, y1, x2, y2, obj_id, cls_pred = track_obj
+            box_h = int(((y2 - y1) / unpad_h) * img.shape[0])
+            box_w = int(((x2 - x1) / unpad_w) * img.shape[1])
+            y1 = int(((y1 - pad_y // 2) / unpad_h) * img.shape[0])
+            x1 = int(((x1 - pad_x // 2) / unpad_w) * img.shape[1])
+            x_point = int((2*x1+box_w)/2)
+            y_point = int(y1+box_h)
+            color = colors[int(obj_id) % len(colors)]
+            # color = (255, 153, 255)
+            cls = classes[int(cls_pred)]
+            obj_list[obj_id]['class'] = cls
+            obj_list[obj_id]['position'].append((x_point ,y_point))
+
+            cv2.rectangle(frame, (x1, y1), (x1+box_w, y1+box_h), color, 1)
+            cv2.putText(frame, cls.capitalize() + ":" + str(int(obj_id)) + '['+ str(int(obj_conf*100)) +'%]', (x_point+10, y_point-20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 1,cv2.LINE_AA)
+
+            if print_tracking:
+                for circ in obj_list[obj_id]['position']:
+                    cv2.circle(frame, circ, 6, color, thickness=-1, lineType=8, shift=0)
+            else:
+                cv2.circle(frame, obj_list[obj_id]['position'][-1], 6, color, thickness=-1, lineType=8, shift=0)
+
+            ''' Count objects in ROG '''
+            rog_count = region_of_geofence(obj_list, rog_area)
+            # rog_count = 0
 
     else:
         detections = []
-
 
 
     ''' Info panel '''
     cv2.rectangle(frame, (0, 0), (180, 70), (0,0,0), -1)
     cv2.putText(frame, str(round(frames / (time.time() - starttime),2))+' FPS', (0, 20), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,255), 1)
     cv2.putText(frame, 'OBJECTS FOUND: '+str(len(detections)), (0, 40), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,255), 1)
-    cv2.putText(frame, 'INSIDE ROG: '+str(rog_count), (0, 60), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,255), 1)
+    # cv2.putText(frame, 'INSIDE ROG: '+str(rog_count), (0, 60), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,255), 1)
+    cv2.putText(frame, 'Frames left: '+str(number_of_frames-frames), (0, 60), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,255), 1)
 
 
 
@@ -198,9 +214,11 @@ while(True):
     if ch == 27:
         break
 
+vid.release()
+if save_record:
+    out_video.release()
+    print('Out file saved.')
+cv2.destroyAllWindows()
 
 print('Total execution time:',time.time()-starttime)
-cv2.destroyAllWindows()
-if save_record:
-    out.release()
 print('--- END OF PROCESS ---')
