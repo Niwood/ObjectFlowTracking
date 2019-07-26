@@ -2,7 +2,7 @@
 import os, sys, time, datetime, random, gc
 
 # Utilities
-from utils import utils
+from utils.utils import *
 from utils.models import *
 from utils.sort import *
 
@@ -29,12 +29,12 @@ save_record = False
 enable_ROG = False
 manual_ROG_selection = False # Pre defined ROG area in main loop
 enable_otm = True
-print_tracking = False
+print_tracking = True
 
-yolo_model = 'default' # default or tiny
+yolo_model = 'tiny' # default or tiny
 # img_size = 416
-# img_size = 256
-img_size = 160
+img_size = 256
+# img_size = 160
 conf_thres = 0.7
 nms_thres = 0.4
 colors=[(255,0,0),(0,255,0),(0,0,255),(255,0,255),(128,0,0),(0,128,0),(0,0,128),(128,0,128),(128,128,0),(0,128,128)]
@@ -45,22 +45,14 @@ class_path='config/coco.names'
 '''
 Classifier configuration and weights
 '''
+edit_cfg_resolution(img_size, yolo_model)
 if yolo_model == 'tiny':
     weights_path='config/yolov3-tiny.weights'
-    if img_size == 416:
-        config_path='config/yolov3-tiny-416.cfg'
-    elif img_size == 256:
-        config_path='config/yolov3-tiny-256.cfg'
-    elif img_size == 160:
-        config_path='config/yolov3-tiny-160.cfg'
+    config_path='config/yolov3-tiny.cfg'
 elif yolo_model == 'default':
     weights_path='config/yolov3.weights'
-    if img_size == 416:
-        config_path='config/yolov3-416.cfg'
-    elif img_size == 256:
-        config_path='config/yolov3-256.cfg'
-    elif img_size == 160:
-        config_path='config/yolov3-160.cfg'
+    config_path='config/yolov3.cfg'
+
 
 
 
@@ -76,7 +68,7 @@ if CUDA:
 else:
     Tensor = torch.FloatTensor
 model.eval()
-classes = utils.load_classes(class_path)
+classes = load_classes(class_path)
 
 
 
@@ -152,7 +144,7 @@ while(True):
         tracked_object_list = [int(i[4]) for i in tracked_objects]
 
         # Remove objects when more than 100 objects
-        if len(obj_list)>100:
+        if len(obj_list)>1000:
             obj_list.pop(min(obj_list), None)
 
         # Add newly detected objects

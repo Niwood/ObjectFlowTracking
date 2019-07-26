@@ -256,3 +256,26 @@ def build_targets(
 def to_categorical(y, num_classes):
     """ 1-hot encodes a tensor """
     return torch.from_numpy(np.eye(num_classes, dtype="uint8")[y])
+
+def edit_cfg_resolution(img_size, yolo_model):
+    if yolo_model == 'default':
+        config_path='config/yolov3.cfg'
+    elif yolo_model== 'tiny':
+        config_path='config/yolov3-tiny.cfg'
+
+    config_file = open(config_path, "r")
+    all_rows = []
+    for row in config_file:
+        if 'width' in row:
+            all_rows.append('width='+str(img_size)+'\n')
+            continue
+        elif 'height' in row:
+            all_rows.append('height='+str(img_size)+'\n')
+            continue
+        all_rows.append(row)
+    config_file.close()
+
+    config_file = open(config_path, "w")
+    for row in all_rows:
+        config_file.write(row)
+    config_file.close()
