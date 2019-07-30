@@ -1,0 +1,11 @@
+torch
+cv2
+numpy
+numba
+pandas
+Pillow
+torchvision
+line-profiler
+scikit-image
+sklearn
+filterpy
