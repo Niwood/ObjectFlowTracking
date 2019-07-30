@@ -10,9 +10,16 @@ from torchvision import transforms
 from torch.autograd import Variable
 from utils import utils
 
+# Profiler
+import line_profiler
+import atexit
+profile = line_profiler.LineProfiler()
+atexit.register(profile.print_stats)
+
 '''
 Image detection Function
 '''
+@profile
 def detect_image(img, img_size, conf_thres, nms_thres, model, Tensor):
 
     ''' Scale and pad image '''
