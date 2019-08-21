@@ -19,7 +19,7 @@ atexit.register(profile.print_stats)
 '''
 Image detection Function
 '''
-@profile
+# @profile
 def detect_image(img, img_size, conf_thres, nms_thres, model, Tensor):
 
     ''' Scale and pad image '''

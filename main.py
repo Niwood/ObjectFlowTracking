@@ -30,18 +30,18 @@ def main():
     '''
     Configuration
     '''
-    video_path = 'images/highway.mp4' # Set parameter to "cam" for webcam
-    video_path = 'images/blueangels.jpg'
+    video_path = 'images/cctv.mp4' # Set parameter to "cam" for webcam
+    # video_path = 'images/blueangels.jpg'
     # video_path = 'cam'
-    save_record = False
+    save_record = True
     enable_ROG = False
     manual_ROG_selection = False # Pre defined ROG area in main loop
     enable_otm = True
-    print_tracking = True
+    print_tracking = False
 
-    yolo_model = 'tiny' # default or tiny
-    # img_size = 416
-    img_size = 256
+    yolo_model = 'default' # default or tiny
+    img_size = 416
+    # img_size = 256
     # img_size = 160
     conf_thres = 0.7
     nms_thres = 0.4
@@ -120,7 +120,6 @@ def main():
 
     while(True):
 
-
         ''' Pre-process image '''
         pilimg, frame, frame_orig, ret, img = pre_process(vid, img_size)
         if not ret:
@@ -183,9 +182,9 @@ def main():
 
                 if print_tracking:
                     for circ in obj_list[obj_id]['position']:
-                        cv2.circle(frame, circ, 6, color, thickness=-1, lineType=8, shift=0)
+                        cv2.circle(frame, circ, 3, color, thickness=-1, lineType=8, shift=0)
                 else:
-                    cv2.circle(frame, obj_list[obj_id]['position'][-1], 6, color, thickness=-1, lineType=8, shift=0)
+                    cv2.circle(frame, obj_list[obj_id]['position'][-1], 3, color, thickness=-1, lineType=8, shift=0)
 
                 ''' Count objects in ROG '''
                 rog_count = region_of_geofence(obj_list, rog_area)
