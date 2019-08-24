@@ -74,43 +74,9 @@ def edit_cfg_resolution(width, height):
         config_file.write(row)
     config_file.close()
 
+
+
 def sand():
-    ld = {2:'a', 3:'dwa'}
-    print(ld)
-    ld.pop(min(ld), None)
-    print(ld)
+    from utils.utils import *
 
-
-def server_demo():
-    import socket
-    import numpy as np
-    import pickle
-    import cv2
-
-    HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-    PORT = 65430        # Port to listen on (non-privileged ports are > 1023)
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
-        s.listen()
-        conn, addr = s.accept()
-        with conn:
-            print('Connected by', addr)
-            # data = b''
-            # loops = 0
-            packet = None
-
-            while True:
-                data = conn.recv(221)
-                packet = pickle.loads(data)
-                print(packet['DID'], len(data))
-                if 'end_process' in packet['DID']:
-                    print('Recieved: end_process')
-                    break
-            # cv2.imshow('img',packet[data])
-
-
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-server_demo()
+sand()

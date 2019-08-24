@@ -10,19 +10,24 @@ PORT = 65430        # Port to listen on (non-privileged ports are > 1023)
 
 def recieve_longMSG(conn, size):
     packet_from_client = b''
+    size_left = size
     while True:
-        data = conn.recv(size)
+        data = conn.recv(size_left)
         packet_from_client += data
-        if len(packet_from_client) == size: break
+        size_left -= len(data)
+        # print(len(packet_from_client))
+
+        if len(packet_from_client) >= size:
+            break
     packet = pickle.loads(packet_from_client)
     return packet
 
 
 def recieve_shortMSG(conn):
     packet_from_client = conn.recv(4096)
-    # print('Packet size from client:',len(packet_from_client))
-    packet_size = pickle.loads(packet_from_client)
-    return packet_size
+    SM_packet = pickle.loads(packet_from_client)
+    print('Packet to be recieved:',SM_packet['PAYLOAD'])
+    return SM_packet
 
 
 def send_confirmation(conn):
@@ -44,26 +49,32 @@ def start_server():
     print('Server listening on PORT', PORT)
     conn, addr = serv.accept()
     print('Connected to', addr)
-    # Recieve short message for packet size
-    packet_size = recieve_shortMSG(conn)
+
+    # Recieve short message for packet size and iterations
+    SM_packet = recieve_shortMSG(conn)
+    iterations = SM_packet['ITERATIONS']
     send_confirmation(conn)
 
-    i = 0
+    i = 1
     while True:
-        packet = recieve_longMSG(conn, packet_size['PAYLOAD'])
+        packet = recieve_longMSG(conn, SM_packet['PAYLOAD'])
 
         did = DID_interpreter(packet['DID'])
-        print(did)
+        # print(did)
         if did == 'end_process':
             print('Recieved end_process from client')
             send_confirmation(conn)
             break
+
 
         # Show stream
         cv2.imshow('frame',packet['PAYLOAD'])
         cv2.waitKey(1)
 
         send_confirmation(conn)
+
+        i += 1
+        if i == iterations: break
 
     # Close server
     serv.close()

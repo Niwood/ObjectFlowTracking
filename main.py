@@ -30,18 +30,18 @@ def main():
     '''
     Configuration
     '''
-    video_path = 'images/cctv.mp4' # Set parameter to "cam" for webcam
+    video_path = 'images/traffic3.mp4' # Set parameter to "cam" for webcam
     # video_path = 'images/blueangels.jpg'
     # video_path = 'cam'
     save_record = True
     enable_ROG = False
     manual_ROG_selection = False # Pre defined ROG area in main loop
     enable_otm = True
-    print_tracking = False
+    print_tracking = True
 
     yolo_model = 'default' # default or tiny
-    img_size = 416
-    # img_size = 256
+    # img_size = 416
+    img_size = 256
     # img_size = 160
     conf_thres = 0.7
     nms_thres = 0.4
@@ -60,7 +60,6 @@ def main():
     elif yolo_model == 'default':
         weights_path='config/yolov3.weights'
         config_path='config/yolov3.cfg'
-
 
 
 

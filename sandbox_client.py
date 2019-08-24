@@ -7,9 +7,10 @@ import sys
 
 class TCP_client:
 
-    def __init__(self, HOST, PORT):
+    def __init__(self, HOST, PORT, ITERATIONS):
         self.HOST = HOST
         self.PORT = PORT
+        self.ITERATIONS = ITERATIONS
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect_to_server()
         self.cam = cv2.VideoCapture(0)
@@ -26,8 +27,10 @@ class TCP_client:
         if type == 'packet_size':
             sample_packet = self.send_longMSG(get_packet_size = True)
             sample_packet_size = len(pickle.dumps(sample_packet))
-            packet = {'DID':'packet_size','PAYLOAD':sample_packet_size}
+            # print('Packet size to be sent:',sample_packet_size)
+            packet = {'DID':'packet_size', 'ITERATIONS':self.ITERATIONS, 'PAYLOAD':sample_packet_size}
             self.client.send(pickle.dumps(packet))
+            self.recieve_from_server(supression = True)
         elif type == 'end_process':
             packet = {'DID':'end_process','PAYLOAD':None}
             self.client.send(pickle.dumps(packet))
@@ -35,7 +38,7 @@ class TCP_client:
             print('Unknown type for short MSG.')
             self.close_client()
 
-    def send_longMSG(self, get_packet_size = False, iterations = None):
+    def send_longMSG(self, get_packet_size = False):
         if get_packet_size:
             payload = self.generate_payload()
             packet = {'DID':'frame', 'PAYLOAD':payload}
@@ -44,11 +47,12 @@ class TCP_client:
             k = 0
             while True:
                 payload = self.generate_payload()
-                packet = {'DID':'frame', 'PAYLOAD':payload}
-                self.client.send(pickle.dumps(packet))
+                packet = {'DID':'frame','PAYLOAD':payload}
+                packet_pickled = pickle.dumps(packet)
+                # print('Size of package to be sent:',len(packet_pickled))
+                self.client.send(packet_pickled)
                 k += 1
-                if k == iterations:
-                    break
+                if k == self.ITERATIONS: break
 
     def generate_payload(self):
         ret, frame = self.cam.read()
@@ -72,17 +76,17 @@ class TCP_client:
 HOST = '127.0.0.1'
 PORT = 65430
 
-# Create the connection object and connect to server
-connection = TCP_client(HOST, PORT)
+# Specify how many frames the client should send
+ITERATIONS = 500
 
-# Send SM to server specifying the packet size
+# Create the connection object and connect to server
+connection = TCP_client(HOST, PORT, ITERATIONS)
+
+# Send SM to server specifying the packet size and iterations
 connection.send_shortMSG(type = 'packet_size')
 
-# Recieve handshake from server
-connection.recieve_from_server(supression = False)
-
 # Start LM communication with server, specifying number of iterations
-connection.send_longMSG(get_packet_size = False, iterations = 100)
+connection.send_longMSG(get_packet_size = False)
 
 # Close the client
 connection.close_client()
