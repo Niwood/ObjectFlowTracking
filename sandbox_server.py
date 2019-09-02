@@ -4,126 +4,95 @@ import pickle
 import cv2
 import time
 
-HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+
+class TCP_server:
+
+    def __init__(self, HOST, PORT):
+        self.HOST = HOST
+        self.PORT = PORT
+        self.server, self.conn = self.start_server()
+
+    def start_server(self):
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind((self.HOST, self.PORT))
+        server.listen()
+        print('Server listening on PORT', PORT)
+        conn, addr = server.accept()
+        print('Connected to', addr)
+        return server, conn
+
+    def recieve_shortMSG(self):
+        packet_from_client = self.conn.recv(4096)
+        SM_packet = pickle.loads(packet_from_client)
+        # print('Packet to be recieved:',SM_packet['PAYLOAD'])
+
+        # Send confirmation to client
+        self.send_confirmation()
+        return SM_packet
+
+    def recieve_longMSG(self, size, iterations):
+
+        # Loop through all iterations specified by the client
+        counter = 1
+        while True:
+            packet_from_client = b''
+            size_left = size
+
+            # Loop through all recieved messages from the client until complete size has been recieved
+            while True:
+                data = self.conn.recv(size_left)
+                packet_from_client += data
+                size_left -= len(data)
+                # print(len(packet_from_client))
+
+                if len(packet_from_client) >= size:
+                    break
+            LM_packet = pickle.loads(packet_from_client)
+            did = DID_interpreter(LM_packet['DID'])
+
+            # Show stream
+            cv2.imshow('frame',LM_packet['PAYLOAD'])
+            cv2.waitKey(1)
+
+            # Send confirmation to client
+            self.send_confirmation()
+
+            # Count number of iterations
+            counter += 1
+            if counter == iterations: break
+
+    def send_confirmation(self):
+        msg = "I got the short msg. /SERVER"
+        self.conn.send(pickle.dumps(msg))
+
+    def DID_interpreter(self, DID):
+        if DID == 'frame':
+            return
+        elif DID == 'end_process':
+            return 'end_process'
+
+    def close_server(self):
+        try:
+            self.server.close()
+            print('Server closed.')
+        except:
+            print('Could not close the server properly.')
+            quit()
+
+
+# Specify the HOST and PORT used by server
+# HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+HOST = '10.0.0.9'
 PORT = 65430        # Port to listen on (non-privileged ports are > 1023)
 
+# Create the connection object and connect to server
+connection = TCP_server(HOST, PORT)
 
-def recieve_longMSG(conn, size):
-    packet_from_client = b''
-    size_left = size
-    while True:
-        data = conn.recv(size_left)
-        packet_from_client += data
-        size_left -= len(data)
-        # print(len(packet_from_client))
+# Recieve short message for packet size and iterations
+SM_packet = connection.recieve_shortMSG()
 
-        if len(packet_from_client) >= size:
-            break
-    packet = pickle.loads(packet_from_client)
-    return packet
+# Recieve LM from client
+connection.recieve_longMSG(SM_packet['PAYLOAD'], SM_packet['ITERATIONS'])
 
-
-def recieve_shortMSG(conn):
-    packet_from_client = conn.recv(4096)
-    SM_packet = pickle.loads(packet_from_client)
-    print('Packet to be recieved:',SM_packet['PAYLOAD'])
-    return SM_packet
-
-
-def send_confirmation(conn):
-    msg = "I got the short msg. /SERVER"
-    conn.send(pickle.dumps(msg))
-
-
-def DID_interpreter(DID):
-    if DID == 'frame':
-        return
-    elif DID == 'end_process':
-        return 'end_process'
-
-
-def start_server():
-    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv.bind((HOST, PORT))
-    serv.listen()
-    print('Server listening on PORT', PORT)
-    conn, addr = serv.accept()
-    print('Connected to', addr)
-
-    # Recieve short message for packet size and iterations
-    SM_packet = recieve_shortMSG(conn)
-    iterations = SM_packet['ITERATIONS']
-    send_confirmation(conn)
-
-    i = 1
-    while True:
-        packet = recieve_longMSG(conn, SM_packet['PAYLOAD'])
-
-        did = DID_interpreter(packet['DID'])
-        # print(did)
-        if did == 'end_process':
-            print('Recieved end_process from client')
-            send_confirmation(conn)
-            break
-
-
-        # Show stream
-        cv2.imshow('frame',packet['PAYLOAD'])
-        cv2.waitKey(1)
-
-        send_confirmation(conn)
-
-        i += 1
-        if i == iterations: break
-
-    # Close server
-    serv.close()
-    cv2.destroyAllWindows()
-    print('SERVER CLOSED')
-
-
-def test_longMSG():
-    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv.bind((HOST, PORT))
-    serv.listen()
-    conn, addr = serv.accept()
-
-    i = 0
-    while True:
-
-        from_client = b''
-        while True:
-
-            data = conn.recv(4096)
-            from_client += data
-            if len(from_client) == 80159: break
-
-        print('MSG size from client',len(from_client))
-
-        # Send confirmation msg to client
-        msg = "This was sent from the SERVER"
-        conn.send(pickle.dumps(msg))
-
-        i += 1
-        if i==2:
-            break
-
-    # Close server
-    conn.close()
-    print('client disconnected')
-
-def test_shortMSG():
-    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv.bind((HOST, PORT))
-    serv.listen()
-    conn, addr = serv.accept()
-
-    from_client = conn.recv(4096)
-    print('Msg from client:',pickle.loads(from_client))
-    msg = "I got the short msg. /SERVER"
-    conn.send(pickle.dumps(msg))
-
-    conn.close()
-    print('client disconnected')
-
-start_server()
+# Close the server
+connection.close_server()
