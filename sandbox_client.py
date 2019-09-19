@@ -15,8 +15,8 @@ class TCP_client:
         self.connect_to_server()
         if sys.platform == 'darwin':
             self.cam = cv2.VideoCapture(0)
-        elif: sys.platform == 'linux':
-            self.cam = jetson_camera()
+        elif sys.platform == 'linux':
+            self.cam = self.jetson_camera()
 
     def connect_to_server(self):
         try:
@@ -80,15 +80,6 @@ class TCP_client:
         # To flip the image, modify the flip_method parameter (0 and 2 are the most common)
         cam = cv2.VideoCapture(self.gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
         if cam.isOpened():
-            # window_handle = cv2.namedWindow('CSI Camera', cv2.WINDOW_AUTOSIZE)
-            # while cv2.getWindowProperty('CSI Camera',0) >= 0:
-                # ret_val, img = cam.read();
-                # cv2.imshow('CSI Camera',img)
-                # keyCode = cv2.waitKey(30) & 0xff
-                # if keyCode == 27:
-                   # break
-            # cam.release()
-            # cv2.destroyAllWindows()
             return cam
         else:
             print('Unable to open camera. Implementation for Jetson Nano.')
@@ -105,11 +96,12 @@ class TCP_client:
 
 
 # Specify the HOST and PORT used by server
-HOST = '127.0.0.1'
-PORT = 65430
+# HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+HOST = '10.0.0.9'
+PORT = 65433
 
-# Specify how many frames the client should send
-ITERATIONS = 10
+# Specify how many frames the client should send - 0 for infinity
+ITERATIONS = 0
 
 # Create the connection object and connect to server
 connection = TCP_client(HOST, PORT, ITERATIONS)

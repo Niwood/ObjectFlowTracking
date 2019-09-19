@@ -33,7 +33,7 @@ def main():
     video_path = 'images/traffic3.mp4' # Set parameter to "cam" for webcam
     # video_path = 'images/blueangels.jpg'
     # video_path = 'cam'
-    save_record = True
+    save_record = False
     enable_ROG = False
     manual_ROG_selection = False # Pre defined ROG area in main loop
     enable_otm = True
@@ -117,7 +117,7 @@ def main():
     starttime = time.time()
 
 
-    while(True):
+    while True:
 
         ''' Pre-process image '''
         pilimg, frame, frame_orig, ret, img = pre_process(vid, img_size)
@@ -222,17 +222,3 @@ def main():
     print('--- END OF PROCESS ---')
 
 main()
-
-# =======================================================
-# =======================================================
-# =======================================================
-# =======================================================
-# =======================================================
-# =======================================================
-# =======================================================
-
-
-class ObjectFlowTracking():
-    def __init__():
-        self.
-        pass
