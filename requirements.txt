@@ -1,11 +1,10 @@
 torch
-cv2
+opencv-python
 numpy
 numba
 pandas
 Pillow
 torchvision
-line-profiler
 scikit-image
 sklearn
 filterpy
