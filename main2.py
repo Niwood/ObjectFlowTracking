@@ -23,10 +23,10 @@ from PIL import Image
 from tcp_server import TCP_Server
 
 # Profiler
-import line_profiler
-import atexit
-profile = line_profiler.LineProfiler()
-atexit.register(profile.print_stats)
+# import line_profiler
+# import atexit
+# profile = line_profiler.LineProfiler()
+# atexit.register(profile.print_stats)
 
 
 class ObjectFlowTracking():

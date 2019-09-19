@@ -11,10 +11,10 @@ from torch.autograd import Variable
 from utils import utils
 
 # Profiler
-import line_profiler
-import atexit
-profile = line_profiler.LineProfiler()
-atexit.register(profile.print_stats)
+# import line_profiler
+# import atexit
+# profile = line_profiler.LineProfiler()
+# atexit.register(profile.print_stats)
 
 '''
 Image detection Function
